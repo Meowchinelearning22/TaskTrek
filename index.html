@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔥 Modern To-Do List</title>
+    <style>
+        :root {
+            --bg-color: #1e1e1e;
+            --text-color: #ffffff;
+            --task-bg: #282828;
+            --frame-bg: #333;
+            --task-border: #444;
+            --button-bg: #444;
+            --button-add: #4CAF50;
+            --button-del: #E74C3C;
+        }
+
+        body.light-theme {
+            --bg-color: #f9f9f9;
+            --text-color: #333;
+            --task-bg: #fff;
+            --frame-bg: #e0e0e0;
+            --task-border: #ccc;
+            --button-bg: #ddd;
+            --button-add: #2E86C1;
+            --button-del: #C0392B;
+        }
+
+        body {
+            font-family: 'Poppins', 'Helvetica', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: all 0.3s ease;
+        }
+
+        .container {
+            max-width: 550px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .input-container {
+            background-color: var(--task-bg);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"], 
+        input[type="date"], 
+        select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 2px solid var(--task-border);
+            border-radius: 4px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        .button-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: opacity 0.3s;
+        }
+
+        button:hover {
+            opacity: 0.8;
+        }
+
+        #toggleTheme {
+            background-color: var(--button-bg);
+            color: var(--text-color);
+        }
+
+        #addTask {
+            background-color: var(--button-add);
+            color: white;
+        }
+
+        #deleteSelected {
+            background-color: var(--button-del);
+            color: white;
+        }
+
+        .task-list {
+            background-color: var(--frame-bg);
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .task-item {
+            background-color: var(--task-bg);
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            border: 2px solid var(--task-border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .task-item.high-priority {
+            border-color: #ff4444;
+        }
+
+        .task-item.medium-priority {
+            border-color: #ffbb33;
+        }
+
+        .task-item.low-priority {
+            border-color: #33b5e5;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .task-content {
+            flex-grow: 1;
+        }
+
+        .task-date {
+            font-size: 0.8em;
+            color: #888;
+        }
+
+        .priority-badge {
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+
+        .priority-high {
+            background-color: #ff4444;
+            color: white;
+        }
+
+        .priority-medium {
+            background-color: #ffbb33;
+            color: white;
+        }
+
+        .priority-low {
+            background-color: #33b5e5;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔥 Modern To-Do List</h1>
+        
+        <div class="input-container">
+            <input type="text" id="taskInput" placeholder="Enter your task...">
+            <select id="prioritySelect">
+                <option value="high">High Priority</option>
+                <option value="medium" selected>Medium Priority</option>
+                <option value="low">Low Priority</option>
+            </select>
+            <input type="date" id="dueDate">
+        </div>
+
+        <div class="button-container">
+            <button id="toggleTheme">🌗 Toggle Theme</button>
+            <button id="addTask">➕ Add Task</button>
+            <button id="deleteSelected">❌ Delete Selected</button>
+        </div>
+
+        <div class="task-list" id="taskList">
+            <!-- Tasks will be added here dynamically -->
+        </div>
+    </div>
+
+    <script>
+        // Initialize tasks from localStorage or empty array
+        let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+        let darkMode = true;
+
+        // DOM Elements
+        const taskInput = document.getElementById('taskInput');
+        const prioritySelect = document.getElementById('prioritySelect');
+        const dueDateInput = document.getElementById('dueDate');
+        const taskList = document.getElementById('taskList');
+
+        // Set today as the minimum date for due date input
+        const today = new Date().toISOString().split('T')[0];
+        dueDateInput.min = today;
+        dueDateInput.value = today;
+
+        function saveTasks() {
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+
+        function createTaskElement(task, index) {
+            const taskItem = document.createElement('div');
+            taskItem.className = `task-item ${task.priority}-priority`;
+            taskItem.innerHTML = `
+                <input type="checkbox" id="task${index}">
+                <div class="task-content">
+                    <div>${task.text}</div>
+                    <div class="task-date">Due: ${task.dueDate}</div>
+                </div>
+                <span class="priority-badge priority-${task.priority}">
+                    ${task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+                </span>
+            `;
+            return taskItem;
+        }
+
+        function updateTaskList() {
+            taskList.innerHTML = '';
+            tasks.forEach((task, index) => {
+                const taskElement = createTaskElement(task, index);
+                taskList.appendChild(taskElement);
+            });
+        }
+
+        function addTask() {
+            const text = taskInput.value.trim();
+            if (!text) {
+                alert('Task cannot be empty!');
+                return;
+            }
+
+            const task = {
+                text,
+                priority: prioritySelect.value,
+                dueDate: dueDateInput.value,
+                completed: false
+            };
+
+            tasks.push(task);
+            saveTasks();
+            updateTaskList();
+
+            // Reset input
+            taskInput.value = '';
+            prioritySelect.value = 'medium';
+            dueDateInput.value = today;
+        }
+
+        function deleteSelectedTasks() {
+            const checkboxes = document.querySelectorAll('.task-item input[type="checkbox"]');
+            const selectedIndices = Array.from(checkboxes)
+                .map((checkbox, index) => checkbox.checked ? index : -1)
+                .filter(index => index !== -1)
+                .reverse();
+
+            if (selectedIndices.length === 0) {
+                alert('No tasks selected!');
+                return;
+            }
+
+            if (confirm('Are you sure you want to delete the selected tasks?')) {
+                selectedIndices.forEach(index => tasks.splice(index, 1));
+                saveTasks();
+                updateTaskList();
+            }
+        }
+
+        function toggleTheme() {
+            darkMode = !darkMode;
+            document.body.classList.toggle('light-theme');
+        }
+
+        // Event Listeners
+        document.getElementById('addTask').addEventListener('click', addTask);
+        document.getElementById('deleteSelected').addEventListener('click', deleteSelectedTasks);
+        document.getElementById('toggleTheme').addEventListener('click', toggleTheme);
+        taskInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addTask();
+        });
+
+        // Initial render
+        updateTaskList();
+    </script>
+</body>
+</html>
